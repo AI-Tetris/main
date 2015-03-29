@@ -2,6 +2,7 @@ public class PlayerSkeleton {
 
 	// implement this function to have a working system
 	public int pickMove(State s, int[][] legalMoves) {
+
 		double[] coeff = { -4.500158825082766, 3.4181268101392694,
 				-3.2178882868487753, -9.348695305445199, -7.899265427351652,
 				-3.3855972247263626 };

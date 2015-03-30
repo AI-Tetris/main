@@ -3,9 +3,14 @@ public class PlayerSkeleton {
 	// implement this function to have a working system
 	public int pickMove(State s, int[][] legalMoves) {
 
-		double[] coeff = { -4.500158825082766, 3.4181268101392694,
-				-3.2178882868487753, -9.348695305445199, -7.899265427351652,
-				-3.3855972247263626 };
+		/*
+		 * double[] coeff = { -4.500158825082766, 3.4181268101392694,
+		 * -3.2178882868487753, -9.348695305445199, -7.899265427351652,
+		 * -3.3855972247263626 };
+		 */
+
+		double[] coeff = { -4.253977908308251, 0.0, -0.8598644677923453, -10.0,
+				-0.6954944236172037, -4.011013610301695 };
 
 		TempPlayer temp = new TempPlayer(s, legalMoves, coeff);
 		System.out.println();

@@ -89,7 +89,7 @@ public class GAedit {
 			// 5 - #holes
 			// 6 - well sums
 
-			int r = 1; //give a larger range for the algo to update weights
+			int r = 2; //give a larger range for the algo to update weights
 //			float[] newWeights = {(float) (rand.nextFloat()-1)*r, (float) (rand.nextFloat()-1)*r,
 //					(float) (rand.nextFloat()*r), (float) (rand.nextFloat()-1)*r,
 //					(float) (rand.nextFloat()-1)*r};
@@ -209,7 +209,7 @@ public class GAedit {
 		}
 	}
 	
-	private float[] recombination(float[] parent1w, float[] parent2w) {
+	private float[] recombination(float[] parent1w, float[] parent2w, float[] parent3w) {
 		// a simple crossover.
 
 		float[] newWeight = new float[weightsNum];
@@ -224,34 +224,43 @@ public class GAedit {
 
 				float w2 = parent2w[i];
 				int intBits2 = Float.floatToIntBits(w2);
+				
+				float w3 = parent3w[i];
+				int intBits3 = Float.floatToIntBits(w3);
 
+				// add leading 0s to make 32-bit
 				String s1 = Integer.toBinaryString(intBits1);
-				String ts1 = ""; // add leading 0s to make 32-bit
+				String ts1 = ""; 
 				for (int m=0; m<32-s1.length(); m++) {
 					ts1 += "0";
 				}
 				s1 = ts1 + s1;
 				
-				
+				// add leading 0s to make 32-bit
 				String s2 = Integer.toBinaryString(intBits2);
-				String ts2 = ""; // add leading 0s to make 32-bit
+				String ts2 = ""; 
 				for (int m=0; m<32-s2.length(); m++) {
 					ts2 += "0";
 				}
 				s2 = ts2 + s2;
 
+				// add leading 0s to make 32-bit
+				String s3 = Integer.toBinaryString(intBits3);
+				String ts3 = ""; 
+				for (int m=0; m<32-s3.length(); m++) {
+					ts3 += "0";
+				}
+				s3 = ts3 + s3;
+
 				// combination of bits
-				String s3 = "";
+				String sNew = "";
 				for (int b=0; b<32; b++) {
 					if (s1.substring(b, b+1).equals(s2.substring(b, b+1))) {
-						s3 = s3 + s1.substring(b, b+1);
+						sNew = sNew + s1.substring(b, b+1);
+					} else if (s1.substring(b, b+1).equals(s3.substring(b, b+1))) {
+						sNew = sNew + s1.substring(b, b+1);
 					} else {
-						float randf = rand.nextFloat();
-						if (randf < 0.5) {
-							s3 = s3 + "0";
-						} else {
-							s3 = s3 + "1";
-						}
+						sNew = sNew + s2.substring(b, b+1);
 					}
 				}
 				
@@ -260,21 +269,19 @@ public class GAedit {
 				while (randf < 0.02) {
 					int randint = rand.nextInt(32);
 					
-					s3 = s3.substring(0, randint) 
-							+ invert(s3.substring(randint, randint+1))
-							+ s3.substring(randint+1, 32);
+					sNew = sNew.substring(0, randint) 
+							+ invert(sNew.substring(randint, randint+1))
+							+ sNew.substring(randint+1, 32);
 					
 					randf = rand.nextFloat();
 				}
 				
-				int intBits3 = (int) Long.parseLong(s3, 2);
-				float w3 = Float.intBitsToFloat(intBits3);
-				newWeight[i] = w3;
+				int intBitsNew = (int) Long.parseLong(sNew, 2);
+				float wNew = Float.intBitsToFloat(intBitsNew);
+				newWeight[i] = wNew;
 				
-				if (Float.isNaN(w3)) {
+				if (Float.isNaN(wNew)) {
 					done = false;
-//				} else if (Math.abs(w3 - w1) > 20 && Math.abs(w3 - w2) > 20) {
-					// too diff from both parents.
 				} else {
 					done = true;
 				}
@@ -324,8 +331,9 @@ public class GAedit {
 		for (int j=0; j<popNum; j++) {
 			int randint1 = rand.nextInt(keepcounter); 
 			int randint2 = rand.nextInt(keepcounter);
+			int randint3 = rand.nextInt(keepcounter);
 
-			newPop[j] = recombination(population[randint1], population[randint2]);
+			newPop[j] = recombination(population[randint1], population[randint2], population[randint3]);
 		}		
 		population = newPop;		
 	}

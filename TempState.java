@@ -4,6 +4,7 @@ public class TempState extends State {
 	private int turnsub = 0;
 	private int clearedsub = 0;
 	private int clearedThisTurn = 0;
+	private int[] lastMove;
 
 	//each square in the grid - int means empty - other values mean the turn it was placed
 	private int[][] fieldsub = new int[ROWS][COLS];
@@ -96,14 +97,6 @@ public class TempState extends State {
 	public int[] getTop() {
 		return topsub;
 	}
-	
-	public int getRowsCleared() {
-		return clearedsub;
-	}
-
-	public int getRowsClearedThisTurn() {
-		return clearedThisTurn;
-	}
 
 	public boolean getHasLost() {
 		return lostsub;
@@ -116,6 +109,7 @@ public class TempState extends State {
 
 	//make a move based on an array of orient and slot
 	public void makeMove(int[] move) {
+		lastMove = move;
 		makeMove(move[ORIENT],move[SLOT]);
 	}
 
@@ -184,7 +178,120 @@ public class TempState extends State {
 		return true;
 	}
 
+	
+	// heuristic h1: height of column when landed
+	public int getLandingHeight() {
+		// get column height
+		int col = lastMove[SLOT];
 
+		int width = State.pWidth[nextPiece][lastMove[ORIENT]];
 
+		int colHeight;
+		int maxColHeight = 0;
+
+		// get maximum column height landed on
+		for (int i = 0; i < width; i++) {
+			colHeight = State.ROWS - 1;
+			while (col + i < State.COLS && fieldsub[colHeight][col + i] == 0
+					&& colHeight > 0) {
+				colHeight--;
+			}
+
+			if (colHeight > maxColHeight) {
+				maxColHeight = colHeight;
+			}
+
+		}
+		return maxColHeight + 1;
+	}
+	
+	// heuristic h2a: total rows cleared
+	public int getRowsCleared() {
+		return clearedsub;
+	}
+
+	// heuristic h2b: rows cleared by the last move
+	public int getRowsClearedThisTurn() {
+		return clearedThisTurn;
+	}
+	
+	// heuristic h3: lateral bumpiness
+	public int getRowTransitions() {
+		int transitions = 0;
+		for (int i = 0; i < State.ROWS; i++) {
+			for (int j = 0; j < State.COLS - 1; j++) {
+				// adjacent cells are not same in filled status
+				if (fieldsub[i][j] == 0 && fieldsub[i][j + 1] != 0
+						|| fieldsub[i][j] != 0 && fieldsub[i][j + 1] == 0) {
+					transitions++;
+				}
+			}
+		}
+		return transitions;
+	}
+
+	// heuristic h4: vertical bumpiness
+	public int getColTransitions() {
+		int transitions = 0;
+		for (int i = 0; i < State.ROWS - 1; i++) {
+			for (int j = 0; j < State.COLS; j++) {
+				// adjacent cells are not same in filled status
+				if (fieldsub[i][j] == 0 && fieldsub[i + 1][j] != 0
+						|| fieldsub[i][j] != 0 && fieldsub[i + 1][j] == 0) {
+					transitions++;
+				}
+			}
+		}
+		return transitions;
+	}
+	
+	
+	// heuristic h5: no of holes
+	public int getNoOfHoles() {
+		int holes = 0;
+		// don't need to check top row for holes
+		for (int i = 0; i < State.ROWS - 1; i++) {
+			for (int j = 0; j < State.COLS; j++) {
+				// empty spaces with filled cell above
+				if (fieldsub[i][j] == 0 && fieldsub[i + 1][j] != 0) {
+					holes++;
+				}
+			}
+		}
+		return holes;
+	}
+
+	
+	// heuristic h6: well sums => empty cells with filled adjacent columns
+	public int getWellSum() {
+		int wells = 0;
+		// don't need to check top row for holes
+		for (int i = 0; i < State.ROWS; i++) {
+			for (int j = 1; j < State.COLS - 1; j++) {
+				// empty spaces with filled left & right cols
+				if ((fieldsub[i][j] == 0) && (fieldsub[i][j - 1] != 0)
+						&& (fieldsub[i][j + 1] != 0)) {
+					wells++;
+				}
+			}
+		}
+
+		// corner cases
+		for (int i = 0; i < State.ROWS; i++) {
+			// empty spaces with filled left & right cols
+			if ((fieldsub[i][0] == 0) && (fieldsub[i][1] != 0)) {
+				wells++;
+			}
+		}
+
+		for (int i = 0; i < State.ROWS; i++) {
+			// empty spaces with filled left & right cols
+			if ((fieldsub[i][State.COLS - 1] == 0)
+					&& (fieldsub[i][State.COLS - 2] != 0)) {
+				wells++;
+			}
+		}
+		return wells;
+	}
 
 }

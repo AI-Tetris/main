@@ -1,6 +1,6 @@
 import java.util.Arrays;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 /*
@@ -8,43 +8,42 @@ import java.util.concurrent.TimeUnit;
  * 
  * population : different variants of the weights
  * 
- * heuristics:
- * 
- * 1- average column height
- * 2- highest height
- * 3- #cleared lines
- * 4- #holes
- *
- * 
  */
 
 
 
 
-public class GAedit {
+public class GAmultiMain {
 
 	// population of 20 with 4 weights each. 
 	static float[][] population;
-	double[] fitnessScores;
+	static double[] fitnessScores;
 	int totalFitnessScore = 0;
 	static TimeUnit tu;
 	
 	static int popNum;
-	static int weightsNum = 6;
+	static int weightsNum = 7;
 	static float[] weights;
 	static Random rand = new Random();
 
 	//double[] w = {-1, -1.5, 2, -0.5};
 
+	// scores[i] : highest score for next move, given weights[i]
+	static double[] scores;
 
-	public GAedit(int n) {
+	// moves[i]  : moves[i] gives the move # for weights[i] to get scores[i]
+	int[] moves;
+
+	static boolean isLastMove = false;
+
+	public GAmultiMain(int n) {
 		popNum = n;
 		population = new float[popNum][weightsNum];
 		fitnessScores = new double[popNum];
 		initPop();
 	}
 
-	public GAedit(float[][] specifiedPop) {
+	public GAmultiMain(float[][] specifiedPop) {
 		popNum = specifiedPop.length;
 		population = specifiedPop;
 		fitnessScores = new double[popNum];
@@ -57,7 +56,8 @@ public class GAedit {
 			// weights are randomly calculated with a range of 1 (eg 0 < x < 1)			
 			
 			// 1 - landing height (-)
-			// 2 - rows cleared in total (+)
+			// 2a- rows cleared in total (+) 
+			// 2b- rows cleared this round (+)
 			// 3 - row transitions (?) 
 			// 4 - column transitions (?)
 			// 5 - #holes (-)
@@ -66,6 +66,7 @@ public class GAedit {
 			int r = 10; // give a larger range for the algo to update weights
 			float[] newWeights = 
 			       {(float) (rand.nextFloat()-1)*r, 
+					(float) (rand.nextFloat())*r,
 					(float) (rand.nextFloat())*r, 
 					(float) (rand.nextFloat()-0.5)*r,
 					(float) (rand.nextFloat()-0.5)*r,
@@ -77,35 +78,6 @@ public class GAedit {
 		}
 	}
 
-	public double fitnessFunc(TempState s, float[] w) {
-
-
-		if (s.getHasLost()) {
-			return Integer.MIN_VALUE;
-		} else {
-			
-			// 1 - landing height
-			// 2 - rows cleared in total
-			// 3 - row transitions
-			// 4 - column transitions
-			// 5 - #holes
-			// 6 - well sums
-			
-			int h1 = s.getLandingHeight();
-			int h2 = s.getRowsCleared();
-			int h3 = s.getRowTransitions();
-			int h4 = s.getColTransitions();
-			int h5 = s.getNoOfHoles();
-			int h6 = s.getWellSum();
-			
-			double h = w[0] * h1 + w[1] * h2
-					+ w[2] * h3 + w[3] * h4 
-					+ w[4] * h5 + w[5] * h6; 
-			return h;
-
-		}
-	}
-	
 	private String invert(String s) {
 		if (s.equals("1")) {
 			return "0";
@@ -238,42 +210,12 @@ public class GAedit {
 		}		
 		population = newPop;		
 	}
-
-	//implement this function to have a working system
-	public int pickMove(State s, int[][] legalMoves) {
-
-		int validMovesNum = legalMoves.length;
-		int toMove = 0;
-		double scoreToMove = Integer.MIN_VALUE;
-		
-		for (int i=0; i<validMovesNum; i++) {
-			TempState stateCopy = new TempState(s);
-			stateCopy.makeMove(legalMoves[i]);
-			
-			// pick the move with the largest score.
-			double nextScore = fitnessFunc(stateCopy, weights);
-			if (nextScore > scoreToMove) {
-				scoreToMove = nextScore;
-				toMove = i;
-			}
-		}
-		return toMove;
-	}
-	
-	private void setWeight(float[] w) {
-		weights = w;
-	}
-	
-	private void setFitnessScore(int index, int linesCleared) {
-		fitnessScores[index] = linesCleared;
-		totalFitnessScore += linesCleared;
-	}
 	
 	private void resetTotalFitnessScore() {
 		totalFitnessScore = 0;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		
 		int numPop = 30; // #games each iteration
@@ -281,17 +223,15 @@ public class GAedit {
 
 		float[][] ownPop = {{-0.9165944f, 0.56823504f, -0.2590816f, -0.65175056f, -0.99231493f, -0.86575115f, -0.5795858f}, {-2.1023023f, 3.9569716f, 7.411435f, -1.6528571f, -4.468202f, -0.31573534f, -2.545408f}, {-1.2519568f, 6.5325665f, 3.8953888f, -2.7684522f, -3.7966685f, -2.6728182f, -0.0107795f}, {-3.526153f, 1.9817466f, 9.340173f, -2.7328682f, -4.529084f, -4.9612017f, -3.588602f}, {-3.0559034f, 3.9422965f, 4.5888333f, -2.4691563f, -3.7622814f, -9.761342f, 0.5290121f}, {-2.8965187f, 2.1095533f, 0.22385538f, -2.8503423f, -3.320928f, -8.042766f, -2.1487074f}, {-7.381353f, 3.279231f, 2.290802f, -3.130217f, -2.7132468f, -7.457886f, -1.1826926f}, {-0.21109468f, 0.38342965f, -0.018973954f, 0.014483638f, -0.459157f, -1.661284f, -0.4257102f}};
 
-		GAedit p = new GAedit(numPop);
-//		GAedit p = new GAedit(ownPop);
-		
+		GAmultiMain p = new GAmultiMain(numPop);
+//		GAmultiMain p = new GAmultiMain(ownPop);
 		
 		long totalStartTime;
 		long totalEndTime;
 		
-		long startTime;
-		long endTime;
 		
 		totalStartTime = System.nanoTime();
+		
 
 		// iterate times to update the population
 		for (int j=0; j<numIterations; j++) {
@@ -299,34 +239,41 @@ public class GAedit {
 			System.out.println("game #" + (j+1));
 			p.resetTotalFitnessScore();
 			
+			Thread[] gameThreads = new Thread[popNum];
+			
 			// for each weight, play the game.
-			for (int i=0; i<GAedit.popNum; i++) {
-				
-				startTime = System.nanoTime();
+			for (int i=0; i<GAmultiMain.popNum; i++) {
 
-				p.setWeight(GAedit.population[i]);
-				State s = new State();
+				Thread newThread = new Thread(new GAmulti(population, fitnessScores, i));
+				gameThreads[i] = newThread;
+				newThread.start();
+//				
+//				p.setWeight(GAmultiMain.population[i]);
+//				State s = new State();
 //				new TFrame(s);
-
-				while(!s.hasLost()) {
-					s.makeMove(p.pickMove(s,s.legalMoves()));
+//
+//				while(!s.hasLost()) {
+//					s.makeMove(p.pickMove(s,s.legalMoves()));
 //					s.draw();
 //					s.drawNext(0,0);
-					try {
-						Thread.sleep(0);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				p.setFitnessScore(i, s.getRowsCleared());
-				System.out.println("i=" + i + "; weights: " + Arrays.toString(population[i]));
-				System.out.println("i=" + i + "; # rows : " + s.getRowsCleared());
+//					try {
+//						Thread.sleep(0);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//				p.setFitnessScore(i, s.getRowsCleared());
+//				System.out.println("i=" + i + "; weights: " + Arrays.toString(population[i]));
+//				System.out.println("i=" + i + "; # rows : " + s.getRowsCleared());
+				
 //				System.out.println("You have completed "+s.getRowsCleared()+" rows.");
-				
-				endTime = System.nanoTime();
-				
-				System.out.println("time taken: " + (endTime - startTime));
 			}
+			
+			for (int i=0; i<popNum; i++) {
+				gameThreads[i].join();
+				
+			}
+			
 			
 			// games all over, now update the population for the next iteration.
 			p.selection();
@@ -337,7 +284,8 @@ public class GAedit {
 		totalEndTime = System.nanoTime();
 		
 		System.out.println("total time taken: " + (totalEndTime - totalStartTime));
-
 		System.out.println("done");
+		System.exit(0);
+		
 	}
 }

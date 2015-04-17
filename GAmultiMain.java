@@ -18,23 +18,14 @@ public class GAmultiMain {
 	// population of 20 with 4 weights each. 
 	static float[][] population;
 	static double[] fitnessScores;
-	int totalFitnessScore = 0;
-	static TimeUnit tu;
 	
 	static int popNum;
-	static int weightsNum = 7;
+	static int weightsNum = 6;
 	static float[] weights;
 	static Random rand = new Random();
 
 	//double[] w = {-1, -1.5, 2, -0.5};
 
-	// scores[i] : highest score for next move, given weights[i]
-	static double[] scores;
-
-	// moves[i]  : moves[i] gives the move # for weights[i] to get scores[i]
-	int[] moves;
-
-	static boolean isLastMove = false;
 
 	public GAmultiMain(int n) {
 		popNum = n;
@@ -56,23 +47,26 @@ public class GAmultiMain {
 			// weights are randomly calculated with a range of 1 (eg 0 < x < 1)			
 			
 			// 1 - landing height (-)
-			// 2a- rows cleared in total (+) 
-			// 2b- rows cleared this round (+)
+			// 2 - rows cleared in total (+)
 			// 3 - row transitions (?) 
 			// 4 - column transitions (?)
 			// 5 - #holes (-)
 			// 6 - well sums (?)
 
 			int r = 10; // give a larger range for the algo to update weights
-			float[] newWeights = 
-			       {(float) (rand.nextFloat()-1)*r, 
-					(float) (rand.nextFloat())*r,
-					(float) (rand.nextFloat())*r, 
-					(float) (rand.nextFloat()-0.5)*r,
-					(float) (rand.nextFloat()-0.5)*r,
-					(float) (rand.nextFloat()-1)*r,
-					(float) (rand.nextFloat()-0.5)*r};
+//			float[] newWeights = 
+//			       {(float) (rand.nextFloat()-1)*r, 
+//					(float) (rand.nextFloat())*r, 
+//					(float) (rand.nextFloat()-0.5)*r,
+//					(float) (rand.nextFloat()-0.5)*r,
+//					(float) (rand.nextFloat()-1)*r,
+//					(float) (rand.nextFloat()-0.5)*r};
+			float[] newWeights = new float[weightsNum];
 			
+			for (int j=0; j<newWeights.length; j++) {
+				newWeights[j] = (float) (rand.nextFloat()-0.5)*r;
+			}
+
 			population[i] = newWeights;
 			
 		}
@@ -180,12 +174,18 @@ public class GAmultiMain {
 			}
 		}
 
+//		System.out.println("total 0 rows... random a weight");
 		System.out.println("Something is wrong");
-		return 0;		
+		return rand.nextInt(popNum);
+//		return 0;		
 	}
 	
 	private void selection() {
 		// calculating the normalised fitness score to select population by percentage. 
+		int totalFitnessScore = 0;
+		for (int i=0; i<popNum; i++) {
+			totalFitnessScore+= fitnessScores[i];
+		}
 		
 		double normalisedScore = (float) fitnessScores[0] / totalFitnessScore;
 		double accNorScore = normalisedScore;
@@ -211,15 +211,11 @@ public class GAmultiMain {
 		population = newPop;		
 	}
 	
-	private void resetTotalFitnessScore() {
-		totalFitnessScore = 0;
-	}
-
 	public static void main(String[] args) throws InterruptedException {
 		
 		
 		int numPop = 30; // #games each iteration
-		int numIterations = 5;
+		int numIterations = 100;
 
 		float[][] ownPop = {{-0.9165944f, 0.56823504f, -0.2590816f, -0.65175056f, -0.99231493f, -0.86575115f, -0.5795858f}, {-2.1023023f, 3.9569716f, 7.411435f, -1.6528571f, -4.468202f, -0.31573534f, -2.545408f}, {-1.2519568f, 6.5325665f, 3.8953888f, -2.7684522f, -3.7966685f, -2.6728182f, -0.0107795f}, {-3.526153f, 1.9817466f, 9.340173f, -2.7328682f, -4.529084f, -4.9612017f, -3.588602f}, {-3.0559034f, 3.9422965f, 4.5888333f, -2.4691563f, -3.7622814f, -9.761342f, 0.5290121f}, {-2.8965187f, 2.1095533f, 0.22385538f, -2.8503423f, -3.320928f, -8.042766f, -2.1487074f}, {-7.381353f, 3.279231f, 2.290802f, -3.130217f, -2.7132468f, -7.457886f, -1.1826926f}, {-0.21109468f, 0.38342965f, -0.018973954f, 0.014483638f, -0.459157f, -1.661284f, -0.4257102f}};
 
@@ -237,7 +233,7 @@ public class GAmultiMain {
 		for (int j=0; j<numIterations; j++) {
 			
 			System.out.println("game #" + (j+1));
-			p.resetTotalFitnessScore();
+			System.out.println("population: " + Arrays.deepToString(population));
 			
 			Thread[] gameThreads = new Thread[popNum];
 			
@@ -271,10 +267,10 @@ public class GAmultiMain {
 			
 			for (int i=0; i<popNum; i++) {
 				gameThreads[i].join();
-				
 			}
-			
-			
+
+	
+			System.out.println("here.");
 			// games all over, now update the population for the next iteration.
 			p.selection();
 			p.makeNewPop();
@@ -283,7 +279,7 @@ public class GAmultiMain {
 		
 		totalEndTime = System.nanoTime();
 		
-		System.out.println("total time taken: " + (totalEndTime - totalStartTime));
+		System.out.println("total time taken: " + TimeUnit.NANOSECONDS.toMillis(totalEndTime - totalStartTime));
 		System.out.println("done");
 		System.exit(0);
 		
